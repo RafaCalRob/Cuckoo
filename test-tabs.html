@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Tab Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Detección de Pestañas</h1>
+
+    <button onclick="listAllTabs()">1. Listar TODAS las pestañas</button>
+    <button onclick="testChatGPT()">2. Buscar ChatGPT</button>
+    <button onclick="testGemini()">3. Buscar Gemini</button>
+    <button onclick="testClaude()">4. Buscar Claude</button>
+    <button onclick="openAITabs()">5. Abrir Pestañas de IAs</button>
+    <button onclick="clearResults()">Limpiar</button>
+
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            resultsDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            console.log(message);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        async function listAllTabs() {
+            log('=== LISTANDO TODAS LAS PESTAÑAS ===', 'info');
+
+            try {
+                const allTabs = await chrome.tabs.query({});
+                log(`Total de pestañas abiertas: ${allTabs.length}`, 'success');
+
+                allTabs.forEach((tab, index) => {
+                    log(`  ${index + 1}. [Tab ${tab.id}] ${tab.url}`, 'info');
+                });
+
+                if (allTabs.length === 0) {
+                    log('⚠️ No se encontraron pestañas (esto es extraño)', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testChatGPT() {
+            log('=== BUSCANDO CHATGPT ===', 'info');
+            await testPattern('ChatGPT', '*://chat.openai.com/*');
+        }
+
+        async function testGemini() {
+            log('=== BUSCANDO GEMINI ===', 'info');
+            await testPattern('Gemini', '*://gemini.google.com/*');
+        }
+
+        async function testClaude() {
+            log('=== BUSCANDO CLAUDE ===', 'info');
+            await testPattern('Claude', '*://*.claude.ai/*');
+        }
+
+        async function testPattern(name, pattern) {
+            try {
+                log(`Patrón de búsqueda: "${pattern}"`, 'info');
+
+                const tabs = await chrome.tabs.query({ url: pattern });
+
+                if (tabs.length > 0) {
+                    log(`✅ ${name} encontrado: ${tabs.length} pestaña(s)`, 'success');
+                    tabs.forEach((tab, index) => {
+                        log(`  ${index + 1}. [Tab ${tab.id}] ${tab.url}`, 'success');
+                    });
+                } else {
+                    log(`❌ ${name} NO encontrado`, 'error');
+                    log(`  Verifica que tengas una pestaña abierta con la URL correcta`, 'error');
+
+                    // Sugerencias
+                    if (name === 'ChatGPT') {
+                        log(`  URL correcta: https://chat.openai.com`, 'info');
+                        log(`  (NO uses chatgpt.com, debe ser chat.openai.com)`, 'info');
+                    } else if (name === 'Gemini') {
+                        log(`  URL correcta: https://gemini.google.com`, 'info');
+                    } else if (name === 'Claude') {
+                        log(`  URL correcta: https://claude.ai`, 'info');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Error buscando ${name}: ${error.message}`, 'error');
+            }
+        }
+
+        async function openAITabs() {
+            log('=== ABRIENDO PESTAÑAS DE IAs ===', 'info');
+
+            const urls = [
+                { name: 'ChatGPT', url: 'https://chat.openai.com' },
+                { name: 'Gemini', url: 'https://gemini.google.com' },
+                { name: 'Claude', url: 'https://claude.ai' }
+            ];
+
+            for (const ai of urls) {
+                try {
+                    const tab = await chrome.tabs.create({ url: ai.url, active: false });
+                    log(`✅ ${ai.name} abierto en Tab ${tab.id}`, 'success');
+                } catch (error) {
+                    log(`❌ Error abriendo ${ai.name}: ${error.message}`, 'error');
+                }
+            }
+
+            log('Espera 5 segundos y luego haz clic en "Listar TODAS las pestañas" para verificar', 'info');
+        }
+
+        // Log inicial
+        log('Test de Detección de Pestañas cargado', 'success');
+        log('Usa los botones de arriba para diagnosticar problemas', 'info');
+        log('', 'info');
+    </script>
+</body>
+</html>

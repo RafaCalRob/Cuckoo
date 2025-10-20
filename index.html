@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Chat AI</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Main styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/modern.css">
+</head>
+<body>
+    <!-- Tutorial/Welcome Overlay -->
+    <div id="tutorial-overlay" class="tutorial-overlay hidden">
+        <div class="tutorial-content">
+            <button class="close-tutorial" id="close-tutorial">&times;</button>
+            <h2>¡Bienvenido a Multi-Chat AI! 🚀</h2>
+
+            <div class="tutorial-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Conecta tus IAs</h3>
+                    <p>Haz clic en "Abrir IAs" para que la extensión abra automáticamente ChatGPT, Gemini y Claude en nuevas pestañas.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Escribe tu Prompt</h3>
+                    <p>Escribe una pregunta o instrucción en el área de texto. Puedes usar el mismo prompt para todas las IAs o personalizarlo.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Compara Respuestas</h3>
+                    <p>Presiona "Enviar" y observa cómo las tres IAs responden simultáneamente. Compara sus respuestas lado a lado.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Usa Modo Resumen</h3>
+                    <p>Activa el "Modo Resumen" para obtener versiones condensadas de todas las respuestas.</p>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="start-tutorial">¡Entendido, comenzar!</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <img src="icons/icon48.png" alt="Logo" class="header-logo">
+                <h1>Multi-Chat AI</h1>
+                <span class="version">v1.0</span>
+            </div>
+
+            <div class="header-center">
+                <div class="connection-status">
+                    <div class="status-item" id="status-gpt">
+                        <span class="status-dot"></span>
+                        <span>ChatGPT</span>
+                    </div>
+                    <div class="status-item" id="status-gemini">
+                        <span class="status-dot"></span>
+                        <span>Gemini</span>
+                    </div>
+                    <div class="status-item" id="status-claude">
+                        <span class="status-dot"></span>
+                        <span>Claude</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <button class="icon-btn" id="btn-help" title="Ayuda">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </button>
+
+                <select id="language-selector" class="language-selector">
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <button class="icon-btn" id="theme-toggle" title="Cambiar tema">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <button class="icon-btn" id="settings-btn" title="Configuración">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m5.196-14.196l-4.242 4.242m-1.908 1.908l-4.242 4.242M1 12h6m6 0h6M4.804 4.804l4.242 4.242m1.908 1.908l4.242 4.242"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Settings Panel (Hidden by default) -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h2>⚙️ Configuración Avanzada</h2>
+                    <button class="close-settings" id="close-settings">&times;</button>
+                </div>
+
+                <div class="settings-body">
+                    <!-- AI Selector -->
+                    <div class="setting-section">
+                        <h3>🤖 Seleccionar IAs Activas</h3>
+                        <p class="setting-description">Elige qué modelos de IA quieres usar</p>
+                        <div class="ai-checkboxes">
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="chatgpt" checked class="ai-selector">
+                                <span class="ai-name">ChatGPT <span class="ai-badge">OpenAI</span></span>
+                            </label>
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="gemini" checked class="ai-selector">
+                                <span class="ai-name">Gemini <span class="ai-badge">Google</span></span>
+                            </label>
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="claude" checked class="ai-selector">
+                                <span class="ai-name">Claude <span class="ai-badge">Anthropic</span></span>
+                            </label>
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="meta" class="ai-selector">
+                                <span class="ai-name">Meta AI <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                            </label>
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="grok" class="ai-selector">
+                                <span class="ai-name">Grok <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                            </label>
+                            <label class="ai-checkbox-label">
+                                <input type="checkbox" value="perplexity" class="ai-selector">
+                                <span class="ai-name">Perplexity <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Personality/Honesty Mode -->
+                    <div class="setting-section">
+                        <h3>🎭 Modo de Personalidad</h3>
+                        <p class="setting-description">Configura cómo deben responder las IAs</p>
+                        <select id="personality-selector" class="personality-selector">
+                            <option value="balanced">⚖️ Equilibrado - Respuestas balanceadas</option>
+                            <option value="honest">💯 Máxima Sinceridad - Sin filtros, directo</option>
+                            <option value="creative">🎨 Creativo - Respuestas innovadoras</option>
+                            <option value="precise">🎯 Preciso - Respuestas técnicas y exactas</option>
+                            <option value="friendly">😊 Amigable - Tono cercano y cálido</option>
+                        </select>
+                    </div>
+
+                    <!-- System Prompt / Pre-prompt -->
+                    <div class="setting-section">
+                        <h3>📝 System Prompt (Pre-prompt Global)</h3>
+                        <p class="setting-description">Este texto se añadirá automáticamente antes de cada prompt</p>
+                        <textarea
+                            id="system-prompt-input"
+                            placeholder="Ejemplo: 'Eres un experto en programación. Responde siempre con ejemplos de código.'"
+                            rows="3"
+                            class="system-prompt-textarea"
+                        ></textarea>
+                        <div class="system-prompt-actions">
+                            <button class="btn-secondary btn-small" id="save-system-prompt">💾 Guardar System Prompt</button>
+                            <button class="btn-secondary btn-small" id="clear-system-prompt">🗑️ Limpiar</button>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Templates -->
+                    <div class="setting-section">
+                        <h3>📚 Plantillas de Prompts</h3>
+                        <p class="setting-description">Guarda y reutiliza tus prompts favoritos</p>
+
+                        <div class="template-creator">
+                            <input
+                                type="text"
+                                id="template-name"
+                                placeholder="Nombre de la plantilla"
+                                class="template-input"
+                            >
+                            <textarea
+                                id="template-content"
+                                placeholder="Contenido del prompt..."
+                                rows="2"
+                                class="template-textarea"
+                            ></textarea>
+                            <button class="btn-secondary btn-small" id="save-template">➕ Guardar Plantilla</button>
+                        </div>
+
+                        <div class="templates-list" id="templates-list">
+                            <!-- Templates will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Personality Presets (Detail) -->
+                    <div class="setting-section">
+                        <h3>ℹ️ Detalles de Modos de Personalidad</h3>
+                        <div class="personality-details">
+                            <div class="personality-detail">
+                                <strong>⚖️ Equilibrado:</strong> Respuestas balanceadas, apropiadas para uso general.
+                            </div>
+                            <div class="personality-detail">
+                                <strong>💯 Máxima Sinceridad:</strong> Añade "Sé brutalmente honesto, sin filtros. Dame tu opinión real incluso si puede ser controversia" al prompt.
+                            </div>
+                            <div class="personality-detail">
+                                <strong>🎨 Creativo:</strong> Añade "Piensa de forma creativa e innovadora. No te limites a respuestas convencionales".
+                            </div>
+                            <div class="personality-detail">
+                                <strong>🎯 Preciso:</strong> Añade "Sé extremadamente preciso y técnico. Usa datos, números y referencias".
+                            </div>
+                            <div class="personality-detail">
+                                <strong>😊 Amigable:</strong> Añade "Responde de forma amigable, cercana y fácil de entender".
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-footer">
+                    <button class="btn-secondary" id="reset-settings">🔄 Restablecer Configuración</button>
+                    <button class="btn-primary" id="save-settings">💾 Guardar y Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <button class="btn-secondary" id="open-tabs-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                    Abrir IAs
+                </button>
+
+                <div class="mode-toggles">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="summary-mode">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Modo Resumen</span>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sequential-mode">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Modo Secuencial</span>
+                    </label>
+
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-scroll">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Auto-scroll</span>
+                    </label>
+                </div>
+
+                <!-- Sequential Mode Config (Hidden by default) -->
+                <div class="sequential-config hidden" id="sequential-config">
+                    <select id="generator-selector" class="role-selector">
+                        <option value="chatgpt">ChatGPT Genera</option>
+                        <option value="gemini">Gemini Genera</option>
+                        <option value="claude">Claude Genera</option>
+                    </select>
+                    <span class="separator">→</span>
+                    <span class="role-label">Los demás validan/corrigen</span>
+                </div>
+
+                <div class="response-stats">
+                    <span id="response-count">0/3 respuestas</span>
+                </div>
+            </div>
+
+            <!-- Responses Container -->
+            <div id="responses-container" class="responses-grid">
+                <div class="chat-column" data-ai="chatgpt">
+                    <div class="winner-badge hidden" id="winner-badge-chatgpt">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                        </svg>
+                        GANADOR
+                    </div>
+                    <div class="column-header">
+                        <div class="ai-info">
+                            <div class="ai-avatar">
+                                <img src="icons/chatgpt-icon.svg" alt="ChatGPT" class="ai-icon" onerror="this.style.display='none'">
+                            </div>
+                            <div class="ai-details">
+                                <h2>ChatGPT</h2>
+                                <span class="ai-provider">OpenAI</span>
+                            </div>
+                        </div>
+                        <div class="column-actions">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="chatgpt">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="chatgpt">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="gpt-response" class="response-content markdown-body">
+                        <p class="placeholder">Esperando prompt...</p>
+                    </div>
+                    <div class="response-footer">
+                        <div class="footer-stats">
+                            <span class="word-count" id="gpt-word-count">0 palabras</span>
+                            <span class="response-time" id="gpt-time"></span>
+                        </div>
+                        <div class="footer-actions">
+                            <button class="btn-winner" data-action="set-winner" data-ai="chatgpt">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                </svg>
+                                Ganador
+                            </button>
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="chatgpt">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 10 4 15 9 20"></polyline>
+                                    <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                </svg>
+                                Usar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-column" data-ai="gemini">
+                    <div class="winner-badge hidden" id="winner-badge-gemini">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                        </svg>
+                        GANADOR
+                    </div>
+                    <div class="column-header">
+                        <div class="ai-info">
+                            <div class="ai-avatar">
+                                <img src="icons/gemini-icon.svg" alt="Gemini" class="ai-icon" onerror="this.style.display='none'">
+                            </div>
+                            <div class="ai-details">
+                                <h2>Gemini</h2>
+                                <span class="ai-provider">Google</span>
+                            </div>
+                        </div>
+                        <div class="column-actions">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="gemini">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="gemini">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="gemini-response" class="response-content markdown-body">
+                        <p class="placeholder">Esperando prompt...</p>
+                    </div>
+                    <div class="response-footer">
+                        <div class="footer-stats">
+                            <span class="word-count" id="gemini-word-count">0 palabras</span>
+                            <span class="response-time" id="gemini-time"></span>
+                        </div>
+                        <div class="footer-actions">
+                            <button class="btn-winner" data-action="set-winner" data-ai="gemini">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                </svg>
+                                Ganador
+                            </button>
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="gemini">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 10 4 15 9 20"></polyline>
+                                    <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                </svg>
+                                Usar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-column" data-ai="claude">
+                    <div class="winner-badge hidden" id="winner-badge-claude">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                        </svg>
+                        GANADOR
+                    </div>
+                    <div class="column-header">
+                        <div class="ai-info">
+                            <div class="ai-avatar">
+                                <img src="icons/claude-icon.svg" alt="Claude" class="ai-icon" onerror="this.style.display='none'">
+                            </div>
+                            <div class="ai-details">
+                                <h2>Claude</h2>
+                                <span class="ai-provider">Anthropic</span>
+                            </div>
+                        </div>
+                        <div class="column-actions">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="claude">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="claude">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="claude-response" class="response-content markdown-body">
+                        <p class="placeholder">Esperando prompt...</p>
+                    </div>
+                    <div class="response-footer">
+                        <div class="footer-stats">
+                            <span class="word-count" id="claude-word-count">0 palabras</span>
+                            <span class="response-time" id="claude-time"></span>
+                        </div>
+                        <div class="footer-actions">
+                            <button class="btn-winner" data-action="set-winner" data-ai="claude">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                </svg>
+                                Ganador
+                            </button>
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="claude">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 10 4 15 9 20"></polyline>
+                                    <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                </svg>
+                                Usar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-section">
+                <div class="input-header">
+                    <div class="input-tabs">
+                        <button class="tab-btn active" data-tab="single">Prompt Único</button>
+                        <button class="tab-btn" data-tab="custom">Prompts Personalizados</button>
+                    </div>
+                    <div class="input-actions">
+                        <button class="icon-btn-small" title="Limpiar texto" id="clear-input">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-content">
+                    <div class="tab-content active" id="tab-single">
+                        <textarea
+                            id="prompt-input"
+                            placeholder="Escribe tu prompt aquí... (Ctrl/Cmd + Enter para enviar)"
+                            rows="4"
+                        ></textarea>
+                        <div class="input-footer">
+                            <span class="char-count" id="char-count">0 caracteres</span>
+                            <button class="btn-primary" id="send-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                                Enviar a Todas las IAs
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-custom">
+                        <div class="custom-prompts">
+                            <div class="custom-prompt-item">
+                                <label>ChatGPT:</label>
+                                <textarea id="prompt-gpt" placeholder="Prompt personalizado para ChatGPT..."></textarea>
+                            </div>
+                            <div class="custom-prompt-item">
+                                <label>Gemini:</label>
+                                <textarea id="prompt-gemini" placeholder="Prompt personalizado para Gemini..."></textarea>
+                            </div>
+                            <div class="custom-prompt-item">
+                                <label>Claude:</label>
+                                <textarea id="prompt-claude" placeholder="Prompt personalizado para Claude..."></textarea>
+                            </div>
+                        </div>
+                        <div class="input-footer">
+                            <button class="btn-primary" id="send-custom-button">
+                                Enviar Prompts Personalizados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/settings-manager.js"></script>
+    <script src="js/winner-system.js"></script>
+    <script src="js/sequential-mode.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/background-handler.js"></script>
+</body>
+</html>

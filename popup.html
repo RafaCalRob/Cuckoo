@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Chat AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <h1>Multi-Chat AI</h1>
+
+        <div id="responses-container">
+            <div class="chat-column">
+                <h2>ChatGPT</h2>
+                <div id="gpt-response" class="response-content">
+                    <p class="placeholder">Las respuestas aparecerán aquí...</p>
+                </div>
+            </div>
+
+            <div class="chat-column">
+                <h2>Gemini</h2>
+                <div id="gemini-response" class="response-content">
+                    <p class="placeholder">Las respuestas aparecerán aquí...</p>
+                </div>
+            </div>
+
+            <div class="chat-column">
+                <h2>Claude</h2>
+                <div id="claude-response" class="response-content">
+                    <p class="placeholder">Las respuestas aparecerán aquí...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="input-area">
+            <textarea
+                id="prompt-input"
+                placeholder="Escribe tu prompt aquí y envíalo a las tres IAs simultáneamente..."
+                rows="3"
+            ></textarea>
+            <button id="send-button">Enviar a Todas las IAs</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
