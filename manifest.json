@@ -15,6 +15,9 @@
       "128": "icons/icon128.png"
     }
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "permissions": [
     "tabs",
     "scripting",
@@ -22,7 +25,8 @@
     "activeTab",
     "clipboardWrite",
     "clipboardRead",
-    "contextMenus"
+    "contextMenus",
+    "cookies"
   ],
   "host_permissions": [
     "*://chatgpt.com/*",
@@ -57,14 +61,26 @@
         "*://www.perplexity.ai/*",
         "*://perplexity.ai/*"
       ],
-      "js": ["content_script_streaming.js"],
+      "js": ["content_script_direct_api.js"],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.css", "sidebar.js", "icons/*"],
-      "matches": ["<all_urls>"]
+      "resources": ["sidebar.css", "sidebar.js", "icons/*", "proof-worker.js"],
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://chat.openai.com/*",
+        "*://*.openai.com/*",
+        "*://gemini.google.com/*",
+        "*://claude.ai/*",
+        "*://*.claude.ai/*",
+        "*://www.meta.ai/*",
+        "*://meta.ai/*",
+        "*://x.com/*",
+        "*://www.perplexity.ai/*",
+        "*://perplexity.ai/*"
+      ]
     }
   ]
 }

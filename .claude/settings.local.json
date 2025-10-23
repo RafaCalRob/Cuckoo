@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(move RESUMEN_PROYECTO.md \"docs\\01_RESUMEN_PROYECTO.md\")",
+      "Bash(move FIXES_APPLIED.md \"docs\\02_FIXES_APPLIED.md\")",
+      "Bash(move APIS_REACTIVADAS.md \"docs\\03_APIS_REACTIVADAS.md\")",
+      "Bash(move INSTRUCCIONES_PRUEBA.md \"docs\\04_INSTRUCCIONES_PRUEBA.md\")",
+      "Bash(move FIX_MAIN_WORLD.md \"docs\\05_FIX_MAIN_WORLD.md\")",
+      "Bash(sort -k5 -hr)"
     ],
     "deny": [],
     "ask": []

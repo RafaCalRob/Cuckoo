@@ -1,0 +1,72 @@
+{
+   "action": {
+   },
+   "background": {
+      "service_worker": "service-worker-loader.js",
+      "type": "module"
+   },
+   "commands": {
+      "open-app": {
+         "description": "Open ChatHub app",
+         "suggested_key": {
+            "default": "Alt+J",
+            "linux": "Alt+J",
+            "mac": "Command+J",
+            "windows": "Alt+J"
+         }
+      }
+   },
+   "declarative_net_request": {
+      "rule_resources": [ {
+         "enabled": true,
+         "id": "ruleset_x_frame_options",
+         "path": "src/rules/x-frame-options.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_chatgpt",
+         "path": "src/rules/chatgpt.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_bing",
+         "path": "src/rules/bing.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_ddg",
+         "path": "src/rules/ddg.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_qianwen",
+         "path": "src/rules/qianwen.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_ollama",
+         "path": "src/rules/ollama.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_pplx",
+         "path": "src/rules/pplx.json"
+      }, {
+         "enabled": true,
+         "id": "ruleset_anthropic",
+         "path": "src/rules/anthropic.json"
+      } ]
+   },
+   "default_locale": "en",
+   "description": "__MSG_appDesc__",
+   "host_permissions": [ "\u003Call_urls>" ],
+   "icons": {
+      "128": "src/assets/icon.png",
+      "16": "src/assets/icon.png",
+      "32": "src/assets/icon.png",
+      "48": "src/assets/icon.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyfpGmb94cbHsgY6+iSBQET31rNdlCOgDoSLfQh2dfX4+UqRcfjmDraTUmv7TsZqcGXkqTA951YwimMVPEMSClZjb6QBjHydCEPPfuv26VJfJMAQmswm0FPJGM8KEauqOro3KURmyGhhEE+/r4giEqyipifNLfPrbnhFGWDI1Er7HhyT8fpLB7ZJ3jyR8x040iAE1FZVRFGXPpVeMh1qV0zzaCc/nl1b8TkyZxNm7iYtrbcIQb9ftLDF8cJwgNXnMlOsxcgtX8cvM5UKvuWBXOMma3+BXG2XA1cG0U+ErK7qQVG9Bybu79j2Iqs2BrwTJTubRFqMTuqG72WHc44FB9QIDAQAB",
+   "manifest_version": 3,
+   "name": "__MSG_appName__",
+   "permissions": [ "storage", "unlimitedStorage", "sidePanel", "declarativeNetRequestWithHostAccess" ],
+   "side_panel": {
+      "default_path": "sidepanel.html"
+   },
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "3.99.4"
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "origin",
+          "operation": "set",
+          "value": "https://www.tongyi.com"
+        },
+        {
+          "header": "referer",
+          "operation": "set",
+          "value": "https://www.tongyi.com/"
+        }
+      ]
+    },
+    "condition": {
+      "requestDomains": ["qianwen.aliyun.com", "qianwen.biz.aliyun.com", "api.tongyi.com"],
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]
