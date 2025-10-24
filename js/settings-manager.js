@@ -134,7 +134,7 @@ function saveAllSettings() {
 
 function resetSettings() {
     if (confirm('¿Estás seguro de que quieres restablecer toda la configuración?')) {
-        AppState.selectedAIs = ['chatgpt', 'gemini', 'claude'];
+        AppState.selectedAIs = ['chatgpt', 'gemini', 'perplexity', 'mistral', 'deepseek'];
         AppState.systemPrompt = '';
         AppState.personalityMode = 'balanced';
 

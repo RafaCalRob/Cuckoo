@@ -13,7 +13,7 @@ const AppState = {
     autoScroll: true,
     responseTimes: {},
     currentTab: 'single',
-    selectedAIs: ['chatgpt', 'gemini', 'claude'], // IAs activas
+    selectedAIs: ['chatgpt', 'gemini', 'perplexity', 'mistral', 'deepseek'], // IAs activas por defecto
     systemPrompt: '', // System prompt global
     personalityMode: 'balanced' // balanced, honest, creative, precise
 };
@@ -85,7 +85,25 @@ const elements = {
     // Responses
     gptResponse: document.getElementById('gpt-response'),
     geminiResponse: document.getElementById('gemini-response'),
-    claudeResponse: document.getElementById('claude-response'),
+    perplexityResponse: document.getElementById('perplexity-response'),
+    mistralResponse: document.getElementById('mistral-response'),
+    deepseekResponse: document.getElementById('deepseek-response'),
+
+    // Summary Panel
+    summaryPanel: document.getElementById('summary-panel'),
+    summaryContent: document.getElementById('summary-content'),
+    summaryAiSelect: document.getElementById('summary-ai-select'),
+    closeSummaryPanel: document.getElementById('close-summary-panel'),
+    btnGenerateSummary: document.getElementById('btn-generate-summary'),
+    btnPropagateSummary: document.getElementById('btn-propagate-summary'),
+
+    // API Keys
+    mistralApiKey: document.getElementById('mistral-api-key'),
+    saveMistralKey: document.getElementById('save-mistral-key'),
+    mistralKeyStatus: document.getElementById('mistral-key-status'),
+    deepseekApiKey: document.getElementById('deepseek-api-key'),
+    saveDeepSeekKey: document.getElementById('save-deepseek-key'),
+    deepseekKeyStatus: document.getElementById('deepseek-key-status'),
 
     // Status
     statusGPT: document.getElementById('status-gpt'),
@@ -118,7 +136,9 @@ const elements = {
 const responseElements = {
     chatgpt: elements.gptResponse,
     gemini: elements.geminiResponse,
-    claude: elements.claudeResponse
+    perplexity: elements.perplexityResponse,
+    mistral: elements.mistralResponse,
+    deepseek: elements.deepseekResponse
 };
 
 const statusElements = {
@@ -143,7 +163,7 @@ function initializeApp() {
 }
 
 function loadSettings() {
-    // Load from chrome.storage
+    // Load from chrome.storage.sync
     chrome.storage.sync.get(['theme', 'language', 'summaryMode', 'autoScroll', 'hasSeenTutorial'], (data) => {
         if (data.theme) {
             AppState.theme = data.theme;
@@ -161,6 +181,16 @@ function loadSettings() {
         if (data.autoScroll !== undefined) {
             AppState.autoScroll = data.autoScroll;
             elements.autoScroll.checked = data.autoScroll;
+        }
+    });
+
+    // Load API keys from chrome.storage.local
+    chrome.storage.local.get(['mistralApiKey', 'deepseekApiKey'], (data) => {
+        if (data.mistralApiKey && elements.mistralApiKey) {
+            elements.mistralApiKey.value = data.mistralApiKey;
+        }
+        if (data.deepseekApiKey && elements.deepseekApiKey) {
+            elements.deepseekApiKey.value = data.deepseekApiKey;
         }
     });
 }
@@ -195,11 +225,38 @@ function attachEventListeners() {
         updateLanguage(e.target.value);
     });
 
-    // Summary mode
+    // Summary mode - Abrir/cerrar sidebar lateral
     elements.summaryMode.addEventListener('change', (e) => {
         AppState.summaryMode = e.target.checked;
         chrome.storage.sync.set({ summaryMode: e.target.checked });
+
+        // Toggle sidebar lateral
+        if (AppState.summaryMode) {
+            elements.summaryPanel.classList.add('active');
+        } else {
+            elements.summaryPanel.classList.remove('active');
+        }
     });
+
+    // Cerrar panel de resumen
+    if (elements.closeSummaryPanel) {
+        elements.closeSummaryPanel.addEventListener('click', () => {
+            elements.summaryPanel.classList.remove('active');
+            elements.summaryMode.checked = false;
+            AppState.summaryMode = false;
+            chrome.storage.sync.set({ summaryMode: false });
+        });
+    }
+
+    // Generar resumen
+    if (elements.btnGenerateSummary) {
+        elements.btnGenerateSummary.addEventListener('click', generateSummary);
+    }
+
+    // Propagar resumen
+    if (elements.btnPropagateSummary) {
+        elements.btnPropagateSummary.addEventListener('click', propagateSummary);
+    }
 
     // Auto scroll
     elements.autoScroll.addEventListener('change', (e) => {
@@ -232,6 +289,44 @@ function attachEventListeners() {
     document.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', handleColumnAction);
     });
+
+    // API Keys - Mistral
+    if (elements.saveMistralKey) {
+        elements.saveMistralKey.addEventListener('click', () => {
+            const apiKey = elements.mistralApiKey.value.trim();
+            if (!apiKey) {
+                elements.mistralKeyStatus.textContent = 'Por favor ingresa una API key';
+                elements.mistralKeyStatus.className = 'api-key-status error';
+                return;
+            }
+            chrome.storage.local.set({ mistralApiKey: apiKey }, () => {
+                elements.mistralKeyStatus.textContent = '✓ API Key guardada';
+                elements.mistralKeyStatus.className = 'api-key-status success';
+                setTimeout(() => {
+                    elements.mistralKeyStatus.textContent = '';
+                }, 3000);
+            });
+        });
+    }
+
+    // API Keys - DeepSeek
+    if (elements.saveDeepSeekKey) {
+        elements.saveDeepSeekKey.addEventListener('click', () => {
+            const apiKey = elements.deepseekApiKey.value.trim();
+            if (!apiKey) {
+                elements.deepseekKeyStatus.textContent = 'Por favor ingresa una API key';
+                elements.deepseekKeyStatus.className = 'api-key-status error';
+                return;
+            }
+            chrome.storage.local.set({ deepseekApiKey: apiKey }, () => {
+                elements.deepseekKeyStatus.textContent = '✓ API Key guardada';
+                elements.deepseekKeyStatus.className = 'api-key-status success';
+                setTimeout(() => {
+                    elements.deepseekKeyStatus.textContent = '';
+                }, 3000);
+            });
+        });
+    }
 }
 
 function handleKeydown(e) {
@@ -677,6 +772,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * NUEVO: Mostrar actualizaciones de streaming en tiempo real
  */
 function displayStreamingUpdate(ai, response, isComplete) {
+    // Si estamos esperando un resumen y esta es la IA seleccionada para resumir
+    if (AppState.waitingForSummary && ai === AppState.summaryAI) {
+        // Mostrar en el panel de resumen
+        elements.summaryContent.innerHTML = `<div class="response-text streaming-text">${escapeHtml(response)}</div>`;
+
+        // Auto-scroll del panel de resumen
+        elements.summaryContent.scrollTop = elements.summaryContent.scrollHeight;
+
+        if (isComplete) {
+            AppState.waitingForSummary = false;
+            AppState.summaryAI = null;
+            console.log('[Summary] Resumen generado completamente');
+        }
+
+        return; // No mostrar en la columna normal
+    }
+
+    // Comportamiento normal para respuestas regulares
     // Usar el sistema de markdown si está disponible
     if (typeof window.displayResponseWithMarkdown === 'function') {
         window.displayResponseWithMarkdown(ai, response);
@@ -688,12 +801,8 @@ function displayStreamingUpdate(ai, response, isComplete) {
         element.classList.remove('loading');
         element.classList.add('streaming'); // Clase para indicar que está en streaming
 
-        if (AppState.summaryMode && isComplete) {
-            element.innerHTML = `<div class="response-text">${escapeHtml(summarizeText(response))}</div>`;
-        } else {
-            // Renderizar el texto mientras se escribe
-            element.innerHTML = `<div class="response-text streaming-text">${escapeHtml(response)}</div>`;
-        }
+        // Renderizar el texto mientras se escribe
+        element.innerHTML = `<div class="response-text streaming-text">${escapeHtml(response)}</div>`;
 
         // Actualizar métricas en tiempo real
         updateWordCount(ai, response);
@@ -725,6 +834,116 @@ function showError(message) {
 
 // Check tabs on load
 checkAITabs();
+
+// ===========================
+// Summary Functions (Modo Resumen)
+// ===========================
+
+/**
+ * Genera un resumen tomando TODAS las respuestas de TODAS las IAs
+ */
+async function generateSummary() {
+    console.log('[Summary] Generando resumen...');
+
+    // Obtener todas las respuestas actuales
+    const allResponses = getAllAIResponses();
+
+    if (Object.keys(allResponses).length === 0) {
+        elements.summaryContent.innerHTML = '<p class="placeholder" style="color: var(--error);">❌ No hay respuestas para resumir. Envía un prompt primero.</p>';
+        return;
+    }
+
+    // Construir prompt para el resumen
+    const summaryPrompt = buildSummaryPrompt(allResponses);
+
+    // Obtener la IA seleccionada para generar el resumen
+    const selectedAI = elements.summaryAiSelect.value;
+
+    // Mostrar indicador de carga
+    elements.summaryContent.innerHTML = '<p class="placeholder">🔄 Generando resumen con ' + selectedAI + '...</p>';
+
+    // Enviar a la IA seleccionada
+    try {
+        chrome.runtime.sendMessage({
+            type: 'SEND_PROMPT',
+            prompt: summaryPrompt,
+            selectedAIs: [selectedAI]
+        });
+
+        // Escuchar la respuesta específicamente para el resumen
+        AppState.waitingForSummary = true;
+        AppState.summaryAI = selectedAI;
+
+    } catch (error) {
+        console.error('[Summary] Error:', error);
+        elements.summaryContent.innerHTML = '<p class="placeholder" style="color: var(--error);">❌ Error al generar resumen: ' + error.message + '</p>';
+    }
+}
+
+/**
+ * Obtiene todas las respuestas actuales de todas las IAs
+ */
+function getAllAIResponses() {
+    const responses = {};
+
+    for (const [aiName, element] of Object.entries(responseElements)) {
+        if (!element) continue;
+
+        const text = element.textContent || element.innerText;
+
+        // Ignorar placeholders y textos vacíos
+        if (text && text.trim() && !text.includes('Esperando prompt') && !text.includes('Cargando')) {
+            responses[aiName] = text.trim();
+        }
+    }
+
+    return responses;
+}
+
+/**
+ * Construye el prompt para generar el resumen
+ */
+function buildSummaryPrompt(allResponses) {
+    let prompt = '📊 INSTRUCCIONES: Analiza las siguientes respuestas de diferentes IAs y genera UNA conclusión consolidada que sintetice los puntos clave, diferencias y consensos.\n\n';
+
+    prompt += '='.repeat(80) + '\n';
+
+    for (const [aiName, response] of Object.entries(allResponses)) {
+        prompt += `\n### Respuesta de ${aiName.toUpperCase()}:\n`;
+        prompt += response;
+        prompt += '\n' + '='.repeat(80) + '\n';
+    }
+
+    prompt += '\n\n📝 Por favor, genera un resumen consolidado que incluya:\n';
+    prompt += '1. Puntos en común entre todas las respuestas\n';
+    prompt += '2. Diferencias significativas o perspectivas únicas\n';
+    prompt += '3. Conclusión final integrando todas las perspectivas\n';
+
+    return prompt;
+}
+
+/**
+ * Propaga el resumen actual a todas las IAs activas
+ */
+async function propagateSummary() {
+    const summaryText = elements.summaryContent.textContent || elements.summaryContent.innerText;
+
+    if (!summaryText || summaryText.includes('placeholder')) {
+        alert('Genera un resumen primero antes de propagarlo.');
+        return;
+    }
+
+    const propagatePrompt = `Basándote en este resumen consolidado, continúa la conversación:\n\n${summaryText}`;
+
+    // Enviar a todas las IAs seleccionadas
+    chrome.runtime.sendMessage({
+        type: 'SEND_PROMPT',
+        prompt: propagatePrompt,
+        selectedAIs: AppState.selectedAIs
+    });
+
+    console.log('[Summary] Resumen propagado a:', AppState.selectedAIs);
+}
 
 // ===========================
 // Export Functions for Sequential Mode

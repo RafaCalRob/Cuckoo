@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Chat AI</title>
+    <title>Milana by BDOvenbird</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,14 +13,14 @@
 
     <!-- Main styles -->
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/modern.css">
+    <!-- <link rel="stylesheet" href="styles/modern.css"> -->
 </head>
 <body>
     <!-- Tutorial/Welcome Overlay -->
     <div id="tutorial-overlay" class="tutorial-overlay hidden">
         <div class="tutorial-content">
             <button class="close-tutorial" id="close-tutorial">&times;</button>
-            <h2>¡Bienvenido a Multi-Chat AI! 🚀</h2>
+            <h2>¡Bienvenido a Milana! 🚀</h2>
 
             <div class="tutorial-steps">
                 <div class="step">
@@ -58,8 +58,8 @@
         <header class="app-header">
             <div class="header-left">
                 <img src="icons/icon48.png" alt="Logo" class="header-logo">
-                <h1>Multi-Chat AI</h1>
-                <span class="version">v1.0</span>
+                <h1>Milana</h1>
+                <span class="version-subtitle">by BDOvenbird</span>
             </div>
 
             <div class="header-center">
@@ -131,32 +131,93 @@
                     <!-- AI Selector -->
                     <div class="setting-section">
                         <h3>🤖 Seleccionar IAs Activas</h3>
-                        <p class="setting-description">Elige qué modelos de IA quieres usar</p>
+                        <p class="setting-description">Elige qué modelos de IA quieres usar. Todas funcionan via peticiones directas.</p>
                         <div class="ai-checkboxes">
                             <label class="ai-checkbox-label">
                                 <input type="checkbox" value="chatgpt" checked class="ai-selector">
-                                <span class="ai-name">ChatGPT <span class="ai-badge">OpenAI</span></span>
+                                <div class="ai-info">
+                                    <span class="ai-name">ChatGPT <span class="ai-badge">OpenAI</span></span>
+                                    <span class="ai-description">Conversación general, código y análisis. Requiere sesión activa en chatgpt.com</span>
+                                </div>
                             </label>
                             <label class="ai-checkbox-label">
                                 <input type="checkbox" value="gemini" checked class="ai-selector">
-                                <span class="ai-name">Gemini <span class="ai-badge">Google</span></span>
+                                <div class="ai-info">
+                                    <span class="ai-name">Gemini <span class="ai-badge">Google</span></span>
+                                    <span class="ai-description">IA de Google con acceso a búsqueda actualizada. Requiere sesión en gemini.google.com</span>
+                                </div>
                             </label>
                             <label class="ai-checkbox-label">
-                                <input type="checkbox" value="claude" checked class="ai-selector">
-                                <span class="ai-name">Claude <span class="ai-badge">Anthropic</span></span>
+                                <input type="checkbox" value="perplexity" checked class="ai-selector">
+                                <div class="ai-info">
+                                    <span class="ai-name">Perplexity <span class="ai-badge ai-badge-new">Beta</span></span>
+                                    <span class="ai-description">IA con búsqueda en tiempo real y referencias. Requiere sesión en perplexity.ai</span>
+                                </div>
                             </label>
                             <label class="ai-checkbox-label">
-                                <input type="checkbox" value="meta" class="ai-selector">
-                                <span class="ai-name">Meta AI <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                                <input type="checkbox" value="mistral" checked class="ai-selector">
+                                <div class="ai-info">
+                                    <span class="ai-name">Mistral <span class="ai-badge">API</span></span>
+                                    <span class="ai-description">Modelo open-source francés de alta calidad. Requiere API Key gratuita de mistral.ai</span>
+                                </div>
                             </label>
                             <label class="ai-checkbox-label">
-                                <input type="checkbox" value="grok" class="ai-selector">
-                                <span class="ai-name">Grok <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                                <input type="checkbox" value="deepseek" checked class="ai-selector">
+                                <div class="ai-info">
+                                    <span class="ai-name">DeepSeek <span class="ai-badge">API</span></span>
+                                    <span class="ai-description">Modelo de razonamiento avanzado. Requiere API Key gratuita de deepseek.com</span>
+                                </div>
                             </label>
-                            <label class="ai-checkbox-label">
-                                <input type="checkbox" value="perplexity" class="ai-selector">
-                                <span class="ai-name">Perplexity <span class="ai-badge ai-badge-new">Nuevo</span></span>
+                        </div>
+                    </div>
+
+                    <!-- API Keys Configuration -->
+                    <div class="setting-section">
+                        <h3>🔑 API Keys</h3>
+                        <p class="setting-description">Configura tus API keys para Mistral y DeepSeek (ambas gratuitas)</p>
+
+                        <!-- Mistral API Key -->
+                        <div class="api-key-section">
+                            <label for="mistral-api-key" class="api-key-label">
+                                <strong>Mistral API Key</strong>
+                                <a href="https://console.mistral.ai/api-keys/" target="_blank" class="api-key-link">
+                                    Obtener gratis →
+                                </a>
                             </label>
+                            <div class="api-key-input-group">
+                                <input
+                                    type="password"
+                                    id="mistral-api-key"
+                                    placeholder="..."
+                                    class="api-key-input"
+                                >
+                                <button class="btn-secondary btn-small" id="save-mistral-key">
+                                    💾 Guardar
+                                </button>
+                            </div>
+                            <p class="api-key-status" id="mistral-key-status"></p>
+                        </div>
+
+                        <!-- DeepSeek API Key -->
+                        <div class="api-key-section" style="margin-top: var(--spacing-md);">
+                            <label for="deepseek-api-key" class="api-key-label">
+                                <strong>DeepSeek API Key</strong>
+                                <a href="https://platform.deepseek.com/api_keys" target="_blank" class="api-key-link">
+                                    Obtener gratis →
+                                </a>
+                            </label>
+                            <div class="api-key-input-group">
+                                <input
+                                    type="password"
+                                    id="deepseek-api-key"
+                                    placeholder="sk-..."
+                                    class="api-key-input"
+                                >
+                                <button class="btn-secondary btn-small" id="save-deepseek-key">
+                                    💾 Guardar
+                                </button>
+                            </div>
+                            <p class="api-key-status" id="deepseek-key-status"></p>
                         </div>
                     </div>
 
@@ -282,7 +343,7 @@
                     <select id="generator-selector" class="role-selector">
                         <option value="chatgpt">ChatGPT Genera</option>
                         <option value="gemini">Gemini Genera</option>
-                        <option value="claude">Claude Genera</option>
+                        <option value="perplexity">Perplexity Genera</option>
                     </select>
                     <span class="separator">→</span>
                     <span class="role-label">Los demás validan/corrigen</span>
@@ -296,12 +357,6 @@
             <!-- Responses Container -->
             <div id="responses-container" class="responses-grid">
                 <div class="chat-column" data-ai="chatgpt">
-                    <div class="winner-badge hidden" id="winner-badge-chatgpt">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                        </svg>
-                        GANADOR
-                    </div>
                     <div class="column-header">
                         <div class="ai-info">
                             <div class="ai-avatar">
@@ -336,12 +391,6 @@
                             <span class="response-time" id="gpt-time"></span>
                         </div>
                         <div class="footer-actions">
-                            <button class="btn-winner" data-action="set-winner" data-ai="chatgpt">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                                </svg>
-                                Ganador
-                            </button>
                             <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="chatgpt">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="9 10 4 15 9 20"></polyline>
@@ -354,12 +403,6 @@
                 </div>
 
                 <div class="chat-column" data-ai="gemini">
-                    <div class="winner-badge hidden" id="winner-badge-gemini">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                        </svg>
-                        GANADOR
-                    </div>
                     <div class="column-header">
                         <div class="ai-info">
                             <div class="ai-avatar">
@@ -394,12 +437,6 @@
                             <span class="response-time" id="gemini-time"></span>
                         </div>
                         <div class="footer-actions">
-                            <button class="btn-winner" data-action="set-winner" data-ai="gemini">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                                </svg>
-                                Ganador
-                            </button>
                             <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="gemini">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="9 10 4 15 9 20"></polyline>
@@ -411,31 +448,25 @@
                     </div>
                 </div>
 
-                <div class="chat-column" data-ai="claude">
-                    <div class="winner-badge hidden" id="winner-badge-claude">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                        </svg>
-                        GANADOR
-                    </div>
+                <div class="chat-column" data-ai="perplexity">
                     <div class="column-header">
                         <div class="ai-info">
                             <div class="ai-avatar">
                                 <!-- Icono removido temporalmente -->
                             </div>
                             <div class="ai-details">
-                                <h2>Claude</h2>
-                                <span class="ai-provider">Anthropic</span>
+                                <h2>Perplexity</h2>
+                                <span class="ai-provider">Perplexity AI</span>
                             </div>
                         </div>
                         <div class="column-actions">
-                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="claude">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="perplexity">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                 </svg>
                             </button>
-                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="claude">
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="perplexity">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -443,22 +474,16 @@
                             </button>
                         </div>
                     </div>
-                    <div id="claude-response" class="response-content markdown-body">
+                    <div id="perplexity-response" class="response-content markdown-body">
                         <p class="placeholder">Esperando prompt...</p>
                     </div>
                     <div class="response-footer">
                         <div class="footer-stats">
-                            <span class="word-count" id="claude-word-count">0 palabras</span>
-                            <span class="response-time" id="claude-time"></span>
+                            <span class="word-count" id="perplexity-word-count">0 palabras</span>
+                            <span class="response-time" id="perplexity-time"></span>
                         </div>
                         <div class="footer-actions">
-                            <button class="btn-winner" data-action="set-winner" data-ai="claude">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                                </svg>
-                                Ganador
-                            </button>
-                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="claude">
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="perplexity">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="9 10 4 15 9 20"></polyline>
                                     <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
@@ -467,6 +492,145 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Mistral Column -->
+                <div class="chat-column" data-ai="mistral">
+                    <div class="column-header">
+                        <div class="ai-info">
+                            <div class="ai-avatar">
+                                <!-- Icono removido temporalmente -->
+                            </div>
+                            <div class="ai-details">
+                                <h2>Mistral</h2>
+                                <span class="ai-provider">Mistral AI</span>
+                            </div>
+                        </div>
+                        <div class="column-actions">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="mistral">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="mistral">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="mistral-response" class="response-content markdown-body">
+                        <p class="placeholder">Esperando prompt...</p>
+                    </div>
+                    <div class="response-footer">
+                        <div class="footer-stats">
+                            <span class="word-count" id="mistral-word-count">0 palabras</span>
+                            <span class="response-time" id="mistral-time"></span>
+                        </div>
+                        <div class="footer-actions">
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="mistral">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 10 4 15 9 20"></polyline>
+                                    <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                </svg>
+                                Usar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DeepSeek Column -->
+                <div class="chat-column" data-ai="deepseek">
+                    <div class="column-header">
+                        <div class="ai-info">
+                            <div class="ai-avatar">
+                                <!-- Icono removido temporalmente -->
+                            </div>
+                            <div class="ai-details">
+                                <h2>DeepSeek</h2>
+                                <span class="ai-provider">DeepSeek AI</span>
+                            </div>
+                        </div>
+                        <div class="column-actions">
+                            <button class="icon-btn-small tooltip-btn" title="Copiar" data-action="copy" data-ai="deepseek">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                            <button class="icon-btn-small tooltip-btn" title="Limpiar" data-action="clear" data-ai="deepseek">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="deepseek-response" class="response-content markdown-body">
+                        <p class="placeholder">Esperando prompt...</p>
+                    </div>
+                    <div class="response-footer">
+                        <div class="footer-stats">
+                            <span class="word-count" id="deepseek-word-count">0 palabras</span>
+                            <span class="response-time" id="deepseek-time"></span>
+                        </div>
+                        <div class="footer-actions">
+                            <button class="btn-use-prompt" data-action="use-as-prompt" data-ai="deepseek">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 10 4 15 9 20"></polyline>
+                                    <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                                </svg>
+                                Usar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Panel (IA Intermediaria) - Sidebar Lateral -->
+            <div id="summary-panel" class="summary-panel">
+                <div class="summary-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
+                        <h3>📊 Resumen Consolidado</h3>
+                        <button class="icon-btn-small" id="close-summary-panel" title="Cerrar">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="summary-subtitle">IA Intermediaria - Sintetiza todas las respuestas</p>
+                    <div class="summary-ai-selector">
+                        <label>IA para resumir:</label>
+                        <select id="summary-ai-select">
+                            <option value="gemini" selected>Gemini (Recomendado)</option>
+                            <option value="chatgpt">ChatGPT</option>
+                            <option value="perplexity">Perplexity</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="summary-content" class="summary-content markdown-body">
+                    <p class="placeholder">Activa "Modo Resumen" y envía un prompt. El resumen aparecerá aquí...</p>
+                </div>
+                <div class="summary-footer">
+                    <button class="btn-secondary" id="btn-generate-summary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <path d="M9 10a3 3 0 016 0v5"></path>
+                        </svg>
+                        Generar Resumen
+                    </button>
+                    <button class="btn-secondary" id="btn-propagate-summary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                        </svg>
+                        Propagar a todas las IAs
+                    </button>
                 </div>
             </div>
 

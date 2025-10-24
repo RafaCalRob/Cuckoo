@@ -7,7 +7,8 @@
       "Bash(move APIS_REACTIVADAS.md \"docs\\03_APIS_REACTIVADAS.md\")",
       "Bash(move INSTRUCCIONES_PRUEBA.md \"docs\\04_INSTRUCCIONES_PRUEBA.md\")",
       "Bash(move FIX_MAIN_WORLD.md \"docs\\05_FIX_MAIN_WORLD.md\")",
-      "Bash(sort -k5 -hr)"
+      "Bash(sort -k5 -hr)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []

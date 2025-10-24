@@ -213,8 +213,12 @@ async function handleSendPrompt(prompt, selectedAIs) {
                     await sendToGeminiDirect(prompt);
                 } else if (aiType === 'chatgpt') {
                     await sendToChatGPTDirect(prompt);
-                } else if (aiType === 'claude') {
-                    await sendToClaudeDirect(prompt);
+                } else if (aiType === 'perplexity') {
+                    await sendToPerplexityDirect(prompt);
+                } else if (aiType === 'mistral') {
+                    await sendToMistralDirect(prompt);
+                } else if (aiType === 'deepseek') {
+                    await sendToDeepSeekDirect(prompt);
                 }
 
                 return { aiType, success: true };
@@ -1009,11 +1013,708 @@ function resetChatGPTConversation() {
 }
 
 /**
+ * ========================================
+ * CLAUDE - Petición directa desde background
+ * Clonado de ChatHub 3.99.4_0
+ * ========================================
+ */
+
+// Contexto de conversación de Claude
+let claudeConversationContext = null;
+
+/**
+ * Generar UUID v4
+ */
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * Obtener organization_uuid de Claude
+ */
+async function getClaudeOrganizationId() {
+    console.log('[Claude] Obteniendo organization_uuid...');
+
+    try {
+        const response = await fetch('https://claude.ai/api/organizations', {
+            redirect: 'error',
+            cache: 'no-cache',
+            credentials: 'include'
+        });
+
+        if (response.status === 403) {
+            throw new Error('Please sign in to your Claude account');
+        }
+
+        const organizations = await response.json();
+        const chatOrg = organizations.filter(org => org.capabilities.includes('chat'))[0];
+
+        const orgId = chatOrg ? chatOrg.uuid : organizations[0].uuid;
+        console.log('[Claude] Organization ID:', orgId);
+
+        return orgId;
+
+    } catch (error) {
+        console.error('[Claude] Error obteniendo organization:', error);
+        throw error;
+    }
+}
+
+/**
+ * Crear nueva conversación en Claude
+ */
+async function createClaudeConversation(organizationId) {
+    const conversationId = generateUUID();
+    console.log('[Claude] Creando conversación:', conversationId);
+
+    try {
+        await fetch(`https://claude.ai/api/organizations/${organizationId}/chat_conversations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: '',
+                uuid: conversationId
+            }),
+            credentials: 'include'
+        });
+
+        return conversationId;
+
+    } catch (error) {
+        if (error.status === 403) {
+            throw new Error('There is no logged-in Claude account in this browser.');
+        }
+        throw error;
+    }
+}
+
+/**
+ * Procesar chunk de streaming SSE
+ */
+function processClaudeStreamChunk(line) {
+    if (!line.startsWith('data: ')) return null;
+
+    const jsonStr = line.substring(6);
+    if (jsonStr === '[DONE]') return null;
+
+    try {
+        return JSON.parse(jsonStr);
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Enviar a Claude - Petición directa desde background
  */
-async function sendToClaudeDirect(prompt) {
+async function sendToClaudeDirect(prompt, image = null) {
     console.log('[Claude Direct] Enviando prompt...');
-    throw new Error('Claude Direct no implementado aún');
+
+    try {
+        // 1. Obtener organization_id si no existe
+        if (!claudeConversationContext) {
+            const organizationId = await getClaudeOrganizationId();
+            const conversationId = await createClaudeConversation(organizationId);
+
+            claudeConversationContext = {
+                organizationId,
+                conversationId
+            };
+        }
+
+        const { organizationId, conversationId } = claudeConversationContext;
+
+        // 2. Preparar body (files si hay imagen - por ahora sin soporte)
+        const body = {
+            prompt: prompt,
+            files: [],
+            rendering_mode: 'raw',
+            attachments: []
+        };
+
+        // 3. Enviar petición principal
+        const url = `https://claude.ai/api/organizations/${organizationId}/chat_conversations/${conversationId}/completion`;
+
+        console.log('[Claude] Enviando a:', url);
+        console.log('[Claude] Prompt:', prompt.substring(0, 100) + '...');
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body),
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Claude API error: ${response.status}`);
+        }
+
+        // 4. Procesar respuesta streaming
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                const data = processClaudeStreamChunk(line);
+                if (!data) continue;
+
+                if (data.completion) {
+                    fullText += data.completion;
+
+                    // Enviar actualización al UI
+                    chrome.runtime.sendMessage({
+                        type: 'STREAMING_UPDATE',
+                        ai: 'claude',
+                        response: fullText,
+                        isComplete: false
+                    }).catch(() => {});
+                } else if (data.error) {
+                    throw new Error(JSON.stringify(data.error));
+                }
+            }
+        }
+
+        console.log('[Claude] ✓ Respuesta completa recibida');
+
+        // Notificar fin
+        chrome.runtime.sendMessage({
+            type: 'STREAMING_UPDATE',
+            ai: 'claude',
+            response: fullText,
+            isComplete: true
+        }).catch(() => {});
+
+        return fullText;
+
+    } catch (error) {
+        console.error('[Claude Direct] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Resetear conversación de Claude
+ */
+function resetClaudeConversation() {
+    claudeConversationContext = null;
+    console.log('[Claude] Conversación reseteada');
+}
+
+/**
+ * ========================================
+ * PERPLEXITY - Petición directa desde background
+ * Clonado de ChatHub 3.99.4_0
+ * ========================================
+ */
+
+// Contexto de conversación de Perplexity
+let perplexityConversationContext = {};
+
+/**
+ * Enviar a Perplexity - Petición directa desde background
+ */
+async function sendToPerplexityDirect(prompt) {
+    console.log('[Perplexity Direct] Enviando prompt...');
+
+    try {
+        // Preparar body
+        const body = {
+            params: {
+                search_focus: 'internet',
+                sources: ['web'],
+                last_backend_uuid: perplexityConversationContext.lastBackendUuid || null,
+                mode: 'copilot',
+                model_preference: 'pplx_pro',
+                supported_block_use_cases: [],
+                version: '2.18'
+            },
+            query_str: prompt
+        };
+
+        console.log('[Perplexity] Enviando prompt:', prompt.substring(0, 100) + '...');
+
+        // Enviar petición
+        const response = await fetch('https://www.perplexity.ai/rest/sse/perplexity_ask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body),
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('Perplexity access forbidden. Please visit www.perplexity.ai and resolve any captcha.');
+            }
+            throw new Error(`Perplexity API error: ${response.status}`);
+        }
+
+        // Procesar respuesta streaming SSE
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullAnswer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+
+                const jsonStr = line.substring(6);
+                if (jsonStr === '[DONE]') continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+
+                    if (data.final_sse_message) {
+                        // Guardar backend_uuid para siguiente mensaje
+                        perplexityConversationContext.lastBackendUuid = data.backend_uuid;
+
+                        // Parsear respuesta anidada
+                        const textData = JSON.parse(data.text);
+                        const finalStep = textData.find(step => step.step_type === 'FINAL');
+
+                        if (finalStep) {
+                            const answerData = JSON.parse(finalStep.content.answer);
+                            fullAnswer = answerData.answer || '';
+
+                            // Enviar actualización al UI
+                            chrome.runtime.sendMessage({
+                                type: 'STREAMING_UPDATE',
+                                ai: 'perplexity',
+                                response: fullAnswer,
+                                isComplete: false
+                            }).catch(() => {});
+                        }
+                    }
+                } catch (e) {
+                    // Ignorar errores de parsing
+                }
+            }
+        }
+
+        console.log('[Perplexity] ✓ Respuesta completa recibida');
+
+        // Notificar fin
+        chrome.runtime.sendMessage({
+            type: 'STREAMING_UPDATE',
+            ai: 'perplexity',
+            response: fullAnswer,
+            isComplete: true
+        }).catch(() => {});
+
+        return fullAnswer;
+
+    } catch (error) {
+        console.error('[Perplexity Direct] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Resetear conversación de Perplexity
+ */
+function resetPerplexityConversation() {
+    perplexityConversationContext = {};
+    console.log('[Perplexity] Conversación reseteada');
+}
+
+/**
+ * ========================================
+ * GROQ API - Agregador de modelos open-source
+ * Clonado de ChatHub 3.99.4_0
+ * Modelos: Llama 3.1, Gemma 2, Mixtral, DeepSeek, etc.
+ * ========================================
+ */
+
+// Contexto de conversación de Groq
+let groqConversationContext = {
+    messages: [],
+    currentModel: 'llama-3.1-70b-versatile' // Modelo por defecto
+};
+
+/**
+ * Obtener API Key de Groq desde storage
+ */
+async function getGroqApiKey() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['groqApiKey'], (result) => {
+            if (chrome.runtime.lastError) {
+                reject(new Error('Error reading Groq API key from storage'));
+                return;
+            }
+            if (!result.groqApiKey) {
+                reject(new Error('Groq API key not configured. Please add it in settings.'));
+                return;
+            }
+            resolve(result.groqApiKey);
+        });
+    });
+}
+
+/**
+ * Obtener modelo actual de Groq desde storage
+ */
+async function getGroqModel() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['groqModel'], (result) => {
+            resolve(result.groqModel || 'llama-3.1-70b-versatile');
+        });
+    });
+}
+
+/**
+ * Enviar a Groq - Petición directa desde background
+ * Compatible con API OpenAI (streaming SSE)
+ */
+async function sendToGroqDirect(prompt) {
+    console.log('[Groq Direct] Enviando prompt...');
+
+    try {
+        // Obtener API key y modelo
+        const apiKey = await getGroqApiKey();
+        const model = await getGroqModel();
+
+        // Agregar mensaje del usuario al contexto
+        groqConversationContext.messages.push({
+            role: 'user',
+            content: prompt
+        });
+
+        // Preparar body
+        const body = {
+            model: model,
+            messages: groqConversationContext.messages,
+            stream: true,
+            temperature: 0.7,
+            max_tokens: 4096
+        };
+
+        console.log('[Groq] Enviando a modelo:', model);
+        console.log('[Groq] Prompt:', prompt.substring(0, 100) + '...');
+
+        // Enviar petición
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Groq API key is invalid. Please check your settings.');
+            } else if (response.status === 429) {
+                throw new Error('Groq rate limit exceeded. Please try again later.');
+            }
+            throw new Error(`Groq API error: ${response.status}`);
+        }
+
+        // Procesar respuesta streaming SSE
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+
+                const jsonStr = line.substring(6).trim();
+                if (jsonStr === '[DONE]') continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+
+                    // Formato OpenAI streaming
+                    if (data.choices && data.choices[0]?.delta?.content) {
+                        const deltaContent = data.choices[0].delta.content;
+                        fullText += deltaContent;
+
+                        // Enviar actualización al UI
+                        chrome.runtime.sendMessage({
+                            type: 'STREAMING_UPDATE',
+                            ai: 'groq',
+                            response: fullText,
+                            isComplete: false
+                        }).catch(() => {});
+                    }
+                } catch (e) {
+                    // Ignorar errores de parsing
+                }
+            }
+        }
+
+        console.log('[Groq] ✓ Respuesta completa recibida');
+
+        // Agregar respuesta al contexto
+        groqConversationContext.messages.push({
+            role: 'assistant',
+            content: fullText
+        });
+
+        // Notificar fin
+        chrome.runtime.sendMessage({
+            type: 'STREAMING_UPDATE',
+            ai: 'groq',
+            response: fullText,
+            isComplete: true
+        }).catch(() => {});
+
+        return fullText;
+
+    } catch (error) {
+        console.error('[Groq Direct] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Resetear conversación de Groq
+ */
+function resetGroqConversation() {
+    groqConversationContext.messages = [];
+    console.log('[Groq] Conversación reseteada');
+}
+
+/**
+ * Cambiar modelo de Groq
+ */
+async function setGroqModel(model) {
+    return new Promise((resolve) => {
+        chrome.storage.local.set({ groqModel: model }, () => {
+            groqConversationContext.currentModel = model;
+            console.log('[Groq] Modelo cambiado a:', model);
+            resolve();
+        });
+    });
+}
+
+/**
+ * ========================================
+ * MISTRAL API - Compatible OpenAI
+ * ========================================
+ */
+
+let mistralConversationContext = { messages: [] };
+
+async function getMistralApiKey() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['mistralApiKey'], (result) => {
+            if (!result.mistralApiKey) {
+                reject(new Error('Mistral API key not configured'));
+                return;
+            }
+            resolve(result.mistralApiKey);
+        });
+    });
+}
+
+async function sendToMistralDirect(prompt) {
+    console.log('[Mistral] Enviando prompt...');
+
+    try {
+        const apiKey = await getMistralApiKey();
+
+        mistralConversationContext.messages.push({
+            role: 'user',
+            content: prompt
+        });
+
+        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'mistral-large-latest',
+                messages: mistralConversationContext.messages,
+                stream: true,
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Mistral API error: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const jsonStr = line.substring(6).trim();
+                if (jsonStr === '[DONE]') continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+                    if (data.choices && data.choices[0]?.delta?.content) {
+                        fullText += data.choices[0].delta.content;
+
+                        chrome.runtime.sendMessage({
+                            type: 'STREAMING_UPDATE',
+                            ai: 'mistral',
+                            response: fullText,
+                            isComplete: false
+                        }).catch(() => {});
+                    }
+                } catch (e) {}
+            }
+        }
+
+        mistralConversationContext.messages.push({
+            role: 'assistant',
+            content: fullText
+        });
+
+        chrome.runtime.sendMessage({
+            type: 'STREAMING_UPDATE',
+            ai: 'mistral',
+            response: fullText,
+            isComplete: true
+        }).catch(() => {});
+
+        return fullText;
+    } catch (error) {
+        console.error('[Mistral] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * ========================================
+ * DEEPSEEK API - Compatible OpenAI
+ * ========================================
+ */
+
+let deepseekConversationContext = { messages: [] };
+
+async function getDeepSeekApiKey() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['deepseekApiKey'], (result) => {
+            if (!result.deepseekApiKey) {
+                reject(new Error('DeepSeek API key not configured'));
+                return;
+            }
+            resolve(result.deepseekApiKey);
+        });
+    });
+}
+
+async function sendToDeepSeekDirect(prompt) {
+    console.log('[DeepSeek] Enviando prompt...');
+
+    try {
+        const apiKey = await getDeepSeekApiKey();
+
+        deepseekConversationContext.messages.push({
+            role: 'user',
+            content: prompt
+        });
+
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: deepseekConversationContext.messages,
+                stream: true,
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`DeepSeek API error: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const jsonStr = line.substring(6).trim();
+                if (jsonStr === '[DONE]') continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+                    if (data.choices && data.choices[0]?.delta?.content) {
+                        fullText += data.choices[0].delta.content;
+
+                        chrome.runtime.sendMessage({
+                            type: 'STREAMING_UPDATE',
+                            ai: 'deepseek',
+                            response: fullText,
+                            isComplete: false
+                        }).catch(() => {});
+                    }
+                } catch (e) {}
+            }
+        }
+
+        deepseekConversationContext.messages.push({
+            role: 'assistant',
+            content: fullText
+        });
+
+        chrome.runtime.sendMessage({
+            type: 'STREAMING_UPDATE',
+            ai: 'deepseek',
+            response: fullText,
+            isComplete: true
+        }).catch(() => {});
+
+        return fullText;
+    } catch (error) {
+        console.error('[DeepSeek] Error:', error);
+        throw error;
+    }
 }
 
 /**
